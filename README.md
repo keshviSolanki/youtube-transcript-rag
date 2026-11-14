@@ -1,63 +1,120 @@
-# YouTube Transcript RAG with LangChain
+# 🎬 YouTube Transcript RAG with LangChain
 
-An AI-powered YouTube Transcript Question Answering application built using Python, LangChain, OpenAI, and FAISS.
+An AI-powered **YouTube Transcript Question Answering System** built using Python, LangChain, Groq, HuggingFace Embeddings, FAISS, and Streamlit.
 
-This project allows users to ask questions about a YouTube video. It extracts the video's English transcript, converts it into embeddings, retrieves the most relevant transcript sections using vector similarity search, and generates context-aware answers using an LLM.
+This project allows users to enter a YouTube video URL or video ID and ask questions about its content. It automatically extracts available English or Hindi transcripts, converts transcript chunks into vector embeddings, retrieves the most relevant information using FAISS similarity search, and generates context-aware answers using an LLM.
+
+The application provides both a **command-line interface (CLI)** and an interactive **Streamlit web interface**.
 
 ## 🚀 Features
 
-- Accept YouTube video IDs as input.
-- Automatically fetch English video transcripts.
-- Split transcripts into manageable text chunks.
-- Generate embeddings using OpenAI.
-- Store and search embeddings using FAISS.
-- Retrieve the four most relevant transcript chunks.
-- Ask questions about video content.
-- Generate context-aware answers using GPT-4o-mini.
+- 🎥 Accept YouTube video URLs or video IDs.
+- 📝 Automatically extract available English or Hindi transcripts.
+- 🌐 Support manually created and auto-generated transcripts.
+- 🔄 Prefer English transcripts and fall back to Hindi.
+- ✂️ Split transcripts into manageable text chunks.
+- 🧠 Generate embeddings using HuggingFace Sentence Transformers.
+- 🗄️ Store and retrieve vectors using FAISS.
+- 🔍 Retrieve the four most relevant transcript chunks.
+- 🤖 Generate context-aware answers using Groq LLM.
+- 💬 Ask multiple questions about a selected video through the Streamlit interface.
+- 🖥️ Interactive and styled Streamlit UI.
+- 🔐 Secure API key management using environment variables.
 
 ## 🛠️ Tech Stack
 
 | Technology | Purpose |
 |---|---|
 | Python | Core programming language |
-| LangChain | LLM application framework |
-| OpenAI | Embeddings and language model |
-| GPT-4o-mini | Answer generation |
-| YouTube Transcript API | Transcript extraction |
+| LangChain | RAG pipeline and LLM orchestration |
+| Groq | LLM inference |
+| GPT-OSS-120B | Answer generation through Groq |
+| HuggingFace Embeddings | Text vector generation |
+| all-MiniLM-L6-v2 | Sentence embedding model |
 | FAISS | Vector storage and similarity search |
+| YouTube Transcript API | YouTube transcript extraction |
+| Streamlit | Interactive web interface |
 | Python Dotenv | Environment variable management |
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
+
+### RAG Workflow
 
 ```text
-YouTube Video ID
-       |
-       v
-YouTube Transcript API
-       |
-       v
-Transcript Extraction
-       |
-       v
-Text Splitting
-       |
-       v
-OpenAI Embeddings
-       |
-       v
-FAISS Vector Store
-       |
-       v
-Similarity Search
-       |
-       v
-Retrieve Top 4 Chunks
-       |
-       v
-GPT-4o-mini (LLM)
-       |
-       v
-Context-Aware Answer
+              YouTube Video URL / ID
+                        |
+                        v
+             YouTube Transcript API
+                        |
+                        v
+                Transcript Fetching
+                 (English / Hindi)
+                        |
+                        v
+                 Text Processing
+                        |
+                        v
+                 Text Splitting
+              (Chunk: 1000 characters
+               Overlap: 200 characters)
+                        |
+                        v
+              HuggingFace Embeddings
+                 all-MiniLM-L6-v2
+                        |
+                        v
+                  FAISS Vector Store
+                        |
+                        v
+                  User Question
+                        |
+                        v
+                Semantic Retrieval
+                  (Top 4 Chunks)
+                        |
+                        v
+                Retrieved Context
+                        |
+                        v
+                 RAG Prompt Template
+                        |
+                        v
+                  Groq LLM
+                 GPT-OSS-120B
+                        |
+                        v
+                Context-Aware Answer
+```
+
+### Application Workflow
+
+```text
+             User
+              |
+              v
+        Streamlit UI
+           app.py
+              |
+              v
+       Extract YouTube ID
+              |
+              v
+       User Question
+              |
+              v
+       Python Subprocess
+              |
+              v
+         src/main.py
+              |
+              v
+          RAG Pipeline
+              |
+              v
+        Groq LLM Response
+              |
+              v
+       Display Answer in UI
 ```
 
 ## 📁 Project Structure
@@ -66,9 +123,12 @@ Context-Aware Answer
 youtube-transcript-rag/
 │
 ├── src/
-│   └── main.py
+│   └── main.py              # RAG backend and CLI
 │
-├── .env.example
+├── app.py                   # Streamlit frontend
+│
+├── .env                     # API keys (not committed)
+├── .env.example             # Environment variable template
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -79,102 +139,153 @@ youtube-transcript-rag/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/langchain-python.git
-cd langchain-python/youtube-transcript-rag
+git clone https://github.com/keshviSolanki/youtube-transcript-rag.git
+
+cd youtube-transcript-rag
 ```
 
-### 2. Create and Activate Virtual Environment
+### 2. Create a Virtual Environment
 
 Windows PowerShell:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+
+.venv\Scripts\Activate.ps1
 ```
 
 ### 3. Install Dependencies
 
 ```powershell
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+
+pip install -r requirements.txt
 ```
 
-### 4. Configure API Key
+### 4. Configure Environment Variables
 
-Copy `.env.example` to `.env` and add your OpenAI API key.
+Create a `.env` file in the project root.
+
+Add your Groq API key:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 ```
 
-**Important:** Never commit `.env` or expose your API key on GitHub.
+**Important:** Never upload your `.env` file or expose your API keys on GitHub.
 
 ### 5. Run the Application
 
-Provide a YouTube video ID and an optional question.
+**Option A: Streamlit Web Interface**
 
 ```powershell
-python src/main.py Gfr50f6ZBvo --question "Can you summarize the video?"
+streamlit run app.py
 ```
 
-You can also ask specific questions about the video content.
+Open the application in your browser:
+
+```text
+http://localhost:8501
+```
+
+Paste a YouTube URL, click **Load Video**, and start asking questions.
+
+**Option B: Command-Line Interface**
+
+```powershell
+python src/main.py jNJH6uD5LQE --question "What is this video about?"
+```
+
+You can replace the video ID and question with your own.
 
 ## 🔍 How It Works
 
-1. **Transcript Extraction:** Fetches the English transcript using the YouTube Transcript API.
-2. **Text Splitting:** Divides the transcript into smaller chunks for efficient processing.
-3. **Embeddings Generation:** Converts transcript chunks into numerical vector representations using OpenAI embeddings.
-4. **Vector Storage:** Stores embeddings in a FAISS vector store.
-5. **Semantic Retrieval:** Searches the vector database and retrieves the four most relevant transcript chunks based on the user's question.
-6. **LLM Processing:** Passes the retrieved context and question to GPT-4o-mini.
-7. **Answer Generation:** Generates a context-aware response using the retrieved transcript content.
+1. **Transcript Extraction:** Uses the YouTube Transcript API to fetch available English or Hindi transcripts, preferring English and falling back to Hindi.
+2. **Text Splitting:** Uses LangChain's `RecursiveCharacterTextSplitter` to divide transcripts into chunks of 1000 characters with 200 characters of overlap.
+3. **Embedding Generation:** Uses HuggingFace's `all-MiniLM-L6-v2` model to convert text chunks into numerical vector representations.
+4. **Vector Storage:** Stores transcript embeddings in a FAISS vector store.
+5. **Semantic Retrieval:** Retrieves the four most relevant transcript chunks based on the user's question.
+6. **Prompt Construction:** Combines retrieved transcript context with the user's question using a LangChain prompt template.
+7. **LLM Processing:** Sends the prompt to the Groq-hosted GPT-OSS-120B model.
+8. **Answer Generation:** Generates a context-aware answer using the retrieved transcript information.
+9. **UI Response:** Displays the generated answer in the Streamlit chat interface.
 
 ## 💡 Example Usage
 
-**Input:**
-
-```powershell
-python src/main.py Gfr50f6ZBvo --question "Can you summarize the video?"
-```
-
-**Expected Output:**
+**YouTube Video:**
 
 ```text
-Question: Can you summarize the video?
-
-Answer:
-An AI-generated response based on the relevant
-sections retrieved from the YouTube transcript.
+https://www.youtube.com/watch?v=jNJH6uD5LQE
 ```
 
-*The actual response depends on the selected video and its transcript.*
+**Example Questions:**
+
+```text
+What is this video about?
+
+Explain the main concepts discussed in this video.
+
+What is the difference between Generative AI and Agentic AI?
+
+Summarize the important points of this video.
+```
+
+**Example Output:**
+
+```text
+Answer:
+
+The video explains Generative AI, Large Language Models,
+AI agents, and Agentic AI. It discusses how LLMs generate
+content and how AI agents use external tools and APIs
+to perform tasks.
+```
+
+*Actual responses depend on the selected video's transcript and the question.*
 
 ## 📚 Key Concepts Learned
 
 - Retrieval-Augmented Generation (RAG)
-- LangChain document processing
-- YouTube transcript extraction
-- Text chunking and splitting
-- OpenAI embeddings
+- LangChain architecture and runnable chains
+- YouTube Transcript API integration
+- Multilingual transcript extraction
+- Text splitting and chunk overlap
+- HuggingFace Sentence Transformers
+- Text embeddings and vector representations
 - FAISS vector databases
 - Semantic similarity search
 - Context-aware question answering
-- LLM integration with GPT-4o-mini
+- Groq LLM integration
+- Prompt engineering
+- Streamlit application development
+- Python subprocess integration
 
-## 📝 Notes
+## 📝 Important Notes
 
-- The project fetches English transcripts using the provided YouTube video ID.
-- It uses `YouTubeTranscriptApi().fetch()` instead of the older `get_transcript()` class method.
-- The vector store is created from the fetched transcript during execution; no pre-existing vector database is required.
-- OpenAI API usage may incur charges.
-- Videos without accessible English transcripts may not work.
+- English transcripts are preferred; Hindi transcripts are used as a fallback.
+- The application requires accessible transcripts for the selected video.
+- The vector store is generated dynamically from the transcript during execution.
+- No persistent vector database is required.
+- HuggingFace embeddings run locally.
+- Groq API access is required for answer generation.
+- LLM responses are restricted to the retrieved transcript context by the RAG prompt.
+- Model availability and API usage are subject to Groq's service limits.
+
+## 🔮 Future Improvements
+
+- Support additional transcript languages.
+- Add persistent vector storage.
+- Improve retrieval with reranking.
+- Add conversation memory for follow-up questions.
+- Support multiple YouTube videos in one knowledge base.
+- Add source citations with transcript timestamps.
 
 ## 👨‍💻 Author
 
 **Keshvi Solanki**
 
-GitHub: [keshviSolanki](https://github.com/keshviSolanki)
+- GitHub: [@keshviSolanki](https://github.com/keshviSolanki)
 
 ---
 
-**Project Category:** Generative AI | LangChain | RAG | NLP | Python
+**Project Category:** Generative AI | Retrieval-Augmented Generation | LangChain | NLP | Python | Vector Databases
