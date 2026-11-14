@@ -19,13 +19,31 @@ from langchain_core.runnables import (
 from langchain_core.output_parsers import StrOutputParser
 
 
+# def fetch_transcript(video_id: str) -> str:
+#     """Fetch an English YouTube transcript and return plain text."""
+
+#     api = YouTubeTranscriptApi()
+#     transcript = api.fetch(video_id, languages=["en"])
+
+#     return " ".join(item.text for item in transcript)
+
+
+
 def fetch_transcript(video_id: str) -> str:
-    """Fetch an English YouTube transcript and return plain text."""
+    """Fetch English transcript, or Hindi if English is unavailable."""
 
     api = YouTubeTranscriptApi()
-    transcript = api.fetch(video_id, languages=["en"])
 
-    return " ".join(item.text for item in transcript)
+    transcript_list = api.list(video_id)
+
+    # Prefer English, otherwise Hindi
+    transcript = transcript_list.find_transcript(["en", "hi"])
+
+    print(f"Using language: {transcript.language}")
+
+    fetched = transcript.fetch()
+
+    return " ".join(item.text for item in fetched)
 
 
 def format_docs(documents) -> str:
@@ -149,7 +167,8 @@ def main():
     answer = chain.invoke(args.question)
 
     print("\nAnswer:\n")
-    print(answer)
+    # print(answer)
+    print(answer.encode("utf-8", errors="replace").decode("utf-8"))
 
 
 if __name__ == "__main__":
