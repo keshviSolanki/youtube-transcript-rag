@@ -91,6 +91,7 @@ def extract_video_id(url):
 
     for pattern in patterns:
         match = re.search(pattern, url)
+
         if match:
             return match.group(1)
 
@@ -133,10 +134,12 @@ def get_embeddings():
     )
 
 
-def build_chain(transcript):
+def build_chain(transcript: str, answer_language="English"):
 
     if not os.getenv("GROQ_API_KEY"):
-        raise RuntimeError("GROQ_API_KEY is missing in Render environment variables.")
+        raise RuntimeError(
+            "GROQ_API_KEY is missing in environment variables."
+        )
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
@@ -167,7 +170,10 @@ def build_chain(transcript):
         template=(
             "You are a helpful YouTube transcript assistant.\n"
             "Answer only using the provided transcript context. "
-            "If the context does not contain the answer, say you don't know.\n\n"
+            "If the context does not contain the answer, "
+            "say you don't know.\n"
+            f"IMPORTANT: Respond only in {answer_language}. "
+            "Do not switch to another language.\n\n"
             "Context:\n{context}\n\n"
             "Question: {question}\n"
             "Answer:"
@@ -194,7 +200,9 @@ def main():
     )
 
     st.markdown(
-        '<div class="subtitle">Ask questions about any YouTube video using AI-powered RAG.</div>',
+        '<div class="subtitle">'
+        'Ask questions about any YouTube video using AI-powered RAG.'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -210,6 +218,13 @@ def main():
         value="Can you summarize this video?",
         placeholder="What is this video about?",
         height=100,
+    )
+
+    # Answer language selection
+    answer_language = st.selectbox(
+        "🌐 Choose Answer Language",
+        ["English", "Hindi"],
+        index=0,
     )
 
     if st.button("🚀 Generate Answer"):
@@ -237,15 +252,23 @@ def main():
                 f"{len(transcript)} characters."
             )
 
-            with st.spinner("Building RAG pipeline and generating answer..."):
-                chain = build_chain(transcript)
+            with st.spinner(
+                "Building RAG pipeline and generating answer..."
+            ):
+
+                chain = build_chain(
+                    transcript,
+                    answer_language
+                )
+
                 answer = chain.invoke(question.strip())
 
             st.markdown("### 💡 AI Answer")
+            st.caption(f"Answer language: {answer_language}")
             st.markdown(answer)
 
-            with st.expander("📄 View Transcript"):
-                st.write(transcript)
+            # with st.expander("📄 View Original Transcript"):
+            #     st.write(transcript)
 
         except TranscriptsDisabled:
             st.error("This video does not have captions available.")
